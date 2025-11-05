@@ -371,46 +371,53 @@
     win.querySelector(".closeBtn").addEventListener("click", () => win.remove());
     win.querySelector("#cancelMailBtn").addEventListener("click", () => win.remove());
 
-    // === Versand ===
-    const sendBtn = win.querySelector("#sendMailBtn");
-    sendBtn.addEventListener("click", async () => {
-      const to = "emoti.os@outlook.de";
-      const from = document.getElementById("mailFrom").value.trim();
-      const subject = document.getElementById("mailSubject").value.trim() || "(kein Betreff)";
-      const message = document.getElementById("mailBody").value.trim();
-      const status = document.getElementById("mailStatus");
+    // === Versand über Formspree ===
+const sendBtn = win.querySelector("#sendMailBtn");
+sendBtn.addEventListener("click", async () => {
+  const from = document.getElementById("mailFrom").value.trim();
+  const subject = document.getElementById("mailSubject").value.trim() || "(kein Betreff)";
+  const message = document.getElementById("mailBody").value.trim();
+  const status = document.getElementById("mailStatus");
 
-      if (!message) {
-        status.textContent = "Bitte schreibe eine Nachricht.";
-        status.style.color = "#a00";
-        return;
-      }
+  if (!message) {
+    status.textContent = "Bitte schreibe eine Nachricht.";
+    status.style.color = "#a00";
+    return;
+  }
 
-      status.textContent = "Sende...";
-      status.style.color = "#333";
+  status.textContent = "Sende...";
+  status.style.color = "#333";
 
-      try {
-        const res = await fetch("send_mail.php", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to, from, subject, message })
-        });
-        const data = await res.json().catch(() => ({}));
+  const FORMSPREE_URL = "https://formspree.io/f/deineFormID"; // <– deine eigene URL hier eintragen!
 
-        if (res.ok && data.success) {
-          status.textContent = "Nachricht gesendet ✅";
-          status.style.color = "#060";
-          window.emotiOS?.typeText?.("E-Mail erfolgreich verschickt.");
-          setTimeout(() => win.remove(), 1800);
-        } else {
-          throw new Error((data && data.error) || "Fehler beim Senden");
-        }
-      } catch (err) {
-        status.textContent = "Fehler: Nachricht konnte nicht gesendet werden.";
-        status.style.color = "#a00";
-        window.emotiOS?.typeText?.("Der Mailserver antwortet nicht.");
-      }
+  const payload = {
+    _replyto: from || "anonym@emotios.app",
+    subject,
+    message,
+  };
+
+  try {
+    const res = await fetch(FORMSPREE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
+
+    if (res.ok) {
+      status.textContent = "Nachricht gesendet ✅";
+      status.style.color = "#060";
+      window.emotiOS?.typeText?.("E-Mail erfolgreich verschickt.");
+      setTimeout(() => win.remove(), 2000);
+    } else {
+      throw new Error("Serverfehler");
+    }
+  } catch {
+    status.textContent = "Fehler: Nachricht konnte nicht gesendet werden.";
+    status.style.color = "#a00";
+    window.emotiOS?.typeText?.("Netzwerkfehler beim Senden der Mail.");
+  }
+});
+
   }
 
 
