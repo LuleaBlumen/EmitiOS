@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmotiOS_v1_Gefühle sind keine Bugs</title>
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="apple-touch-icon" href="img/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .hidden { display: none; }
+  .minimized { display: none; }
+	</style>
+
+</head>
+<body>
+
+	<!-- Installations-Intro -->
+	<div id="installOverlay" class="install-screen hidden">
+	  <pre id="installText"></pre>
+	  <div id="nameInputSection" class="hidden">
+		<p>Installation abgeschlossen.<br>Bitte gib deinen Namen ein:</p>
+		<input type="text" id="userNameInput" placeholder="Dein Name">
+		<button id="confirmUserName">Weiter</button>
+	  </div>
+	</div>
+
+  <div class="desktop">
+    <!-- Taskbar -->
+<div class="taskbar" style="display:flex;align-items:center;justify-content:space-between;">
+  <div class="start-btn" id="startBtn">☰ EmotiOS</div>
+
+  <div class="taskbar-center" style="flex:1;text-align:center;font-size:11px;color:#999;">
+    © 2025 EmotiOS | 
+    <a href="#" style="color:#999;text-decoration:none;"
+       title="Private, nicht-kommerzielle Website. Kontakt auf Anfrage.">Impressum</a>
+  </div>
+
+  <div class="task-info" style="display:flex;align-items:center;gap:6px;">
+    <span class="status" id="statusText">Emotion: Neutral</span>
+    <span class="clock" id="clock"></span>
+  </div>
+
+	<!-- Startmenü -->
+	<div id="startMenu" class="start-menu hidden">
+	<button id="openContact">📧 E-Mail (Kontakt)</button>
+	  <button id="openControlPanel">🖥️ Systemsteuerung</button>
+		<button id="openTerminal">💾 Terminal</button>
+
+		<div class="menu-separator"></div>
+  
+	  <button id="sleepBtnMenu">💤 Ruhezustand</button>
+	  <button id="restartBtnMenu">🔄 Neustart</button>
+	  <button id="shutdownBtnMenu">⏻ Herunterfahren</button>
+	</div>
+
+      </div>
+    </div>
+	<!-- Papierkorb-Icon auf dem Desktop -->
+	<div id="recycleBin" class="desktop-icon">
+	  <img src="img/papierkorb.png" alt="Papierkorb" />
+	  <span>Papierkorb</span>
+
+	  <!-- kleines Untermenü -->
+	  <div class="context-menu hidden" id="recycleMenu">
+		<button id="emptyTrashBtn">Papierkorb leeren</button>
+	  </div>
+	</div>
+	
+<!-- Internet -->
+<div id="internetIcon" class="desktop-icon">
+  <div class="icon"></div>
+  <div>Internet</div>
+</div>
+
+<!-- Arcade -->
+<div id="arcadeIcon" class="desktop-icon">
+  <div class="icon"></div>
+  <div>Byte Runner</div>
+</div>
+
+
+    <!-- Hauptfenster -->
+		<div class="window emoti" id="emotiWindow">
+	  <div class="window-header draggable">
+		<span>EmotiOS v1.0 – Gefühle sind keine Bugs</span>
+	  </div>
+
+	  <div class="window-body">
+		<div class="emoti-face">
+		  <img id="emotiFace" src="img/neutral.png" alt="Emotion" />
+		</div>
+		<div class="emoti-textbox" id="typedText">
+		</div>
+		<div class="emoti-actions" style="display:none;">
+		  <button id="praiseBtn">💬 Loben</button>
+		  <button id="talkBtn">🗣️ Reden</button>
+		</div>
+
+	</div>
+
+
+    <!-- Systemstatus -->
+	<div id="statusWindow" class="window status" style="display:none;">
+      <div class="title-bar">
+        <div class="title-bar-text">Systemstatus</div>
+      </div>
+      <div class="window-body">
+        <table id="statusTable">
+		<tr><td>Energie:</td><td id="statusEnergie">--%</td></tr>
+		<tr><td>Kommunikation:</td><td id="statusKommunikation">--%</td></tr>
+		<tr><td>Anerkennung:</td><td id="statusAnerkennung">--%</td></tr>
+		<tr><td>Interaktion:</td><td id="statusInteraktion">--%</td></tr>
+		<tr><td>Ordnung:</td><td id="statusOrdnung">--%</td></tr>
+		<tr><td>Sicherheit:</td><td id="statusSicherheit">--%</td></tr>
+		<tr><td>Gesundheit:</td><td id="statusGesundheit">--%</td></tr>
+		<tr><td>Temperatur:</td><td id="statusTemperatur">--°C</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Systemsteuerung -->
+	<div id="controlPanel" class="window hidden">
+      <div class="title-bar">
+	  <div class="title-bar-text">Systemsteuerung</div>
+	  <div class="window-controls">
+		<span class="close">×</span>
+      </div>
+	  </div>
+      <div class="window-body">
+        <div id="buttonGrid">
+          <button id="defragBtn">💾 Defragmentieren</button>
+          <button id="updateBtn">⬆️ Update</button>
+          <button id="transferBtn">📤 Dateifreigabe</button>
+          <button id="diagnoseBtn">🔍 Systemdiagnose</button>
+          <button id="killBtn">❌ Prozess beenden</button>
+          <button id="backupBtn">💽 Datensicherung</button>
+          <button id="cleanupBtn">🧹 Systembereinigung</button>
+		  <button id="firewallBtn">🧱 Firewall starten</button>
+		  <button id="healBtn">🩺 Systemreparatur</button>
+
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripte -->
+<script src="script.js"></script>
+<script src="personality.js"></script>
+<script src="speech.js"></script>
+<script src="desktop.js"></script>
+<script src="firewall.js"></script>
+<script src="dialoge.js"></script>
+<script src="cleanup_game.js"></script>
+<script src="heal_game.js"></script>
+
+
+
+
+  
+	  <!-- Ruhemodus Overlay -->
+	<div id="sleepOverlay" class="hidden">
+	  <div class="sleep-message">
+		<p>💤 EmotiOS befindet sich im Ruhemodus ...</p>
+		<button id="wakeUpBtn">Wecken</button>
+	  </div>
+	</div>
+		<!-- Neustart-Overlay -->
+	<div id="restartOverlay" class="hidden">
+	  <div class="restart-message">
+		<p>EmotiOS wird neugestartet.<br>Bitte haben Sie einen Moment Geduld.</p>
+		<div class="progress-bar">
+		  <div class="progress-fill" id="restartProgress"></div>
+		</div>
+	  </div>
+	</div>
+<!-- Bluescreen-Overlay -->
+<div id="bluescreenOverlay" class="hidden">
+  <div class="bsod-content">
+    <pre>
+A problem has been detected and EmotiOS has been shut down to prevent damage
+to your computer.
+
+CRITICAL_SYSTEM_FAILURE: ENERGY_MANAGEMENT_FAULT
+
+If this is the first time you've seen this Stop error screen,
+restart your system. If this screen appears again, follow
+these steps:
+
+* Ensure that your human operator is not ignoring vital system needs.
+* Verify thermal management and emotional stability.
+* Consult the EmotiOS manual if available. (It isn't.)
+
+Technical information:
+*** STOP: 0x000000E0 (0x00000001,0x00000002,0x00000003,0x00000004)
+
+Collecting crash dump...
+Crash dump complete.
+
+Zum Neustarten, drücken Sie eine beliebige Taste.
+    </pre>
+  </div>
+</div>
+
+<!-- Arcade-Fenster -->
+<div id="arcadeWindow" class="window hidden" style="width: 420px; top: 120px; left: 120px;">
+  <div class="window-header">
+    <span>🎮 Byte Runner</span>
+    <div class="window-controls">
+      <button class="minimize">–</button>
+      <button class="close">×</button>
+    </div>
+  </div>
+  <div class="window-body" style="background:#111;color:#eee;padding:8px;">
+    <canvas id="arcadeCanvas" width="384" height="216" style="background:#000; display:block; margin:0 auto; image-rendering:pixelated;"></canvas>
+    <div style="font-family:monospace; font-size:12px; margin-top:6px; text-align:center;">
+      <b>Space</b> springen • <b>P</b> Pause • <b>R</b> Neustart
+    </div>
+    <div id="arcadeHud" style="font-family:monospace; font-size:12px; margin-top:6px; text-align:center;"></div>
+  </div>
+</div>
+
+<!-- Spiel-Logik -->
+<script src="game_arcade.js"></script>
+
+
+
+</body>
+</html>
+
+
+
