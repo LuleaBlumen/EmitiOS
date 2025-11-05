@@ -388,7 +388,7 @@ sendBtn.addEventListener("click", async () => {
   status.textContent = "Sende...";
   status.style.color = "#333";
 
-  const FORMSPREE_URL = "https://formspree.io/f/deineFormID"; // <– deine eigene URL hier eintragen!
+  const FORMSPREE_URL = "https://formspree.io/f/xzzknbwd"; // <– deine eigene URL hier eintragen!
 
   const payload = {
     _replyto: from || "anonym@emotios.app",
