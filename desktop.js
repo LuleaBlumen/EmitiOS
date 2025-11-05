@@ -414,9 +414,5 @@ formData.append("message", message);
     window.emotiOS?.typeText?.("Netzwerkfehler beim Senden der Mail.");
   }
 });
-
-
   }
-
-
 })();
