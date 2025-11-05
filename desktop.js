@@ -389,10 +389,11 @@ sendBtn.addEventListener("click", async () => {
   status.style.color = "#333";
 
   try {
-    const formData = new FormData();
-    formData.append("email", from || "anonym@emotios.app");
-    formData.append("subject", subject);
-    formData.append("message", message);
+const formData = new FormData();
+formData.append("_replyto", from || "anonym@emotios.app");
+formData.append("subject", subject);
+formData.append("message", message);
+
 
     const res = await fetch("https://formspree.io/f/xzzknbwd", {
       method: "POST",
