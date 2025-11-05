@@ -323,6 +323,7 @@
    * 3) Kontaktfenster (E-Mail-Style, Win98-Look)
    * --------------------------------------------- */
   function openContactForm() {
+	  const FORMSPREE_URL = "https://formspree.io/f/xzzknbwd";
     let win = document.getElementById("contactWindow");
     if (win) { bringToFront(win); return; }
 
