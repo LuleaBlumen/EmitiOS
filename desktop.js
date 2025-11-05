@@ -371,7 +371,7 @@
     win.querySelector(".closeBtn").addEventListener("click", () => win.remove());
     win.querySelector("#cancelMailBtn").addEventListener("click", () => win.remove());
 
-    // === Versand über Formspree ===
+// === Versand über Formspree ===
 const sendBtn = win.querySelector("#sendMailBtn");
 sendBtn.addEventListener("click", async () => {
   const from = document.getElementById("mailFrom").value.trim();
@@ -388,19 +388,15 @@ sendBtn.addEventListener("click", async () => {
   status.textContent = "Sende...";
   status.style.color = "#333";
 
-  const FORMSPREE_URL = "https://formspree.io/f/xzzknbwd"; // <– deine eigene URL hier eintragen!
-
-  const payload = {
-    _replyto: from || "anonym@emotios.app",
-    subject,
-    message,
-  };
-
   try {
-    const res = await fetch(FORMSPREE_URL, {
+    const formData = new FormData();
+    formData.append("email", from || "anonym@emotios.app");
+    formData.append("subject", subject);
+    formData.append("message", message);
+
+    const res = await fetch("https://formspree.io/f/xzzknbwd", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: formData
     });
 
     if (res.ok) {
@@ -411,12 +407,13 @@ sendBtn.addEventListener("click", async () => {
     } else {
       throw new Error("Serverfehler");
     }
-  } catch {
+  } catch (err) {
     status.textContent = "Fehler: Nachricht konnte nicht gesendet werden.";
     status.style.color = "#a00";
     window.emotiOS?.typeText?.("Netzwerkfehler beim Senden der Mail.");
   }
 });
+
 
   }
 
