@@ -14,6 +14,8 @@
 
   // Drag für ein einzelnes Fenster aktivieren
   function attachDrag(win) {
+	  window.attachDrag = attachDrag;
+
     if (!win) return;
     const header = win.querySelector(".window-header") || win.querySelector(".title-bar");
     if (!header) return;
@@ -247,19 +249,89 @@
     const textArea    = document.getElementById("installText");
     const nameSection = document.getElementById("nameInputSection");
     const savedName   = localStorage.getItem("emotiUser");
+	
+	
+	// Begrüßung
 
-    if (savedName) {
-      overlay?.classList.add("hidden");
-      setTimeout(() => {
-        if (window.emotiOS) {
-          const emotion = window.emotiOS.emotion || "Neutral";
-          const gt = window.greetingTalk;
-          const list = (gt && (gt[emotion] || gt.Neutral)) || ["Willkommen zurück, ${name}."];
-          const msg = list[Math.floor(Math.random() * list.length)];
-          window.emotiOS.typeText(msg.replace(/\$\{name\}/g, savedName));
-        }
-      }, 1500);
-    } else {
+if (savedName) {
+  overlay?.classList.add("hidden");
+  setTimeout(() => {
+    if (window.emotiOS) {
+      const emotion = window.emotiOS.emotion || "Neutral";
+      const gt = window.greetingTalk;
+      const list = (gt && (gt[emotion] || gt.Neutral)) || ["Willkommen zurück, ${name}."];
+      const msg = list[Math.floor(Math.random() * list.length)];
+      window.emotiOS.typeText(msg.replace(/\$\{name\}/g, savedName));
+
+      // === Nur Update anzeigen, wenn neue Version erkannt wurde UND schonmal gestartet wurde ===
+      const currentVersion = window.emotiVersion;
+      const lastVersion = localStorage.getItem("emotiLastVersion");
+
+      if (lastVersion && currentVersion !== lastVersion) {
+        localStorage.setItem("emotiLastVersion", currentVersion);
+
+        // --- Automatisches Systemupdate nach der Begrüßung ---
+        setTimeout(() => {
+          const overlay = document.createElement("div");
+          overlay.className = "defrag-overlay";
+          overlay.innerHTML = `
+            <div class="defrag-window" style="width:360px;">
+              <p id="autoUpdateText">Suche nach Updates...</p>
+              <div class="progress-bar">
+                <div class="progress-fill" id="autoUpdateFill"></div>
+              </div>
+            </div>`;
+          document.body.appendChild(overlay);
+
+          const lines = [
+            "> Lade neue Dialoge...",
+            "> Optimiere Emoti-Humor-Subsystem...",
+            "> Kalibriere Persönlichkeitsschichten...",
+            "> Kompiliere Gefühle...",
+            "> Update abgeschlossen. Ich bin jetzt... besser."
+          ];
+
+          const bar = document.getElementById("autoUpdateFill");
+          const text = document.getElementById("autoUpdateText");
+          let i = 0;
+
+          const interval = setInterval(() => {
+            if (i < lines.length) {
+              text.textContent = lines[i];
+              bar.style.width = `${(i / (lines.length - 1)) * 100}%`;
+              i++;
+            } else {
+              clearInterval(interval);
+              setTimeout(() => {
+                overlay.remove();
+const userName = localStorage.getItem("emotiUser") || "User";
+
+// Emoti nutzt jetzt seine eigene Update-Interaktion
+window.emotiOS.interact("update");
+
+// kleine Belohnung nach erfolgreichem Update
+const c = window.emotiOS.care;
+c.gesundheit = Math.min(c.gesundheit + 15, 100);
+c.sicherheit = Math.min(c.sicherheit + 25, 100);
+c.anerkennung = Math.min(c.anerkennung + 10, 100);
+window.emotiOS.updateStatusWindow();
+
+              }, 1000);
+            }
+          }, 2000);
+        }, 7000); // 7 Sekunden nach Begrüßung starten
+      } else {
+        // Beim ersten Start Version speichern, aber KEIN Update
+        localStorage.setItem("emotiLastVersion", currentVersion);
+      }
+      // === Ende Versionsprüfung ===
+    }
+  }, 1500);
+}
+
+
+
+ else {
       overlay?.classList.remove("hidden");
       const lines = [
         "> Initialisiere EmotiOS...",
@@ -371,7 +443,7 @@
     win.querySelector(".closeBtn").addEventListener("click", () => win.remove());
     win.querySelector("#cancelMailBtn").addEventListener("click", () => win.remove());
 
-    // === Versand über Formspree ===
+// === Versand über Formspree ===
 const sendBtn = win.querySelector("#sendMailBtn");
 sendBtn.addEventListener("click", async () => {
   const from = document.getElementById("mailFrom").value.trim();
@@ -388,19 +460,16 @@ sendBtn.addEventListener("click", async () => {
   status.textContent = "Sende...";
   status.style.color = "#333";
 
-  const FORMSPREE_URL = "https://formspree.io/f/xzzknbwd"; // <– deine eigene URL hier eintragen!
-
-  const payload = {
-    _replyto: from || "anonym@emotios.app",
-    subject,
-    message,
-  };
-
   try {
-    const res = await fetch(FORMSPREE_URL, {
+const formData = new FormData();
+formData.append("_replyto", from || "anonym@emotios.app");
+formData.append("subject", subject);
+formData.append("message", message);
+
+
+    const res = await fetch("https://formspree.io/f/xzzknbwd", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: formData
     });
 
     if (res.ok) {
@@ -411,14 +480,11 @@ sendBtn.addEventListener("click", async () => {
     } else {
       throw new Error("Serverfehler");
     }
-  } catch {
+  } catch (err) {
     status.textContent = "Fehler: Nachricht konnte nicht gesendet werden.";
     status.style.color = "#a00";
     window.emotiOS?.typeText?.("Netzwerkfehler beim Senden der Mail.");
   }
 });
-
   }
-
-
 })();

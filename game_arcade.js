@@ -1,4 +1,4 @@
-// Byte Runner – Arcade-Spiel mit EmotiOS-Reaktionen
+// === Byte Runner – FPS-fix + flüssigere Levelkurve ===
 (function () {
   const win = document.getElementById("arcadeWindow");
   const btnMin = win.querySelector(".minimize");
@@ -8,8 +8,8 @@
   const ctx = cvs.getContext("2d");
 
   let running = false, paused = false, raf = 0;
+  let lastTime = 0; // für Delta-Zeit
 
-  // Spielzustand
   const state = {
     t: 0,
     score: 0,
@@ -23,12 +23,10 @@
     themeHue: 180
   };
 
-  // Hilfsfunktionen
   const rnd = (a, b) => Math.random() * (b - a) + a;
   const rect = (a, b, c, d, col) => { ctx.fillStyle = col; ctx.fillRect(a | 0, b | 0, c | 0, d | 0); };
   const text = (s, x, y) => { ctx.fillStyle = "#eee"; ctx.font = "12px monospace"; ctx.fillText(s, x, y); };
 
-  // Reset
   function resetGame() {
     state.t = 0;
     state.score = 0;
@@ -42,7 +40,6 @@
     paused = false;
   }
 
-  // Hindernisse + Partikel
   function spawnObstacle() {
     const h = rnd(14, 32);
     const w = rnd(10, 20);
@@ -50,34 +47,34 @@
   }
 
   function addDust(x, y) {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 5; i++)
       state.particles.push({ x, y, vx: rnd(-1, 1), vy: rnd(-1, -3), life: rnd(10, 20) });
-    }
   }
 
   function collide(a, b) {
     return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   }
 
-  // Haupt-Update
-  function update() {
+  function update(timestamp) {
     if (!running || paused) return;
-    state.t++;
+    const delta = (timestamp - lastTime) / 16.67; // ≈1 bei 60fps
+    lastTime = timestamp;
 
-    // Hintergrund
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
     ctx.fillStyle = "#1a1a1a";
     ctx.fillRect(0, 200, cvs.width, 2);
 
-    // Schwierigkeit
-    if (state.t % 180 === 0) state.speed += 0.15;
-    if (state.t % Math.max(40, 90 - state.speed * 10) === 0) spawnObstacle();
+    // Schwierigkeit steigt etwas schneller
+    state.t += delta;
+    if (state.t % 150 < 1) state.speed += 0.05 * delta;
 
-    // Spieler
+    // Hindernisse regelmäßiger spawnen (früher ~1.5s → jetzt ~0.9s)
+    if (state.t % Math.max(30, 80 - state.speed * 8) < 1) spawnObstacle();
+
     const p = state.player;
-    p.vy += state.gravity;
-    p.y += p.vy;
+    p.vy += state.gravity * delta;
+    p.y += p.vy * delta;
     if (p.y >= 186) {
       p.y = 186; p.vy = 0;
       if (!p.onGround) addDust(p.x + p.w / 2, p.y + p.h);
@@ -85,18 +82,19 @@
     }
     rect(p.x, p.y, p.w, p.h, `hsl(${state.themeHue},80%,60%)`);
 
-    // Partikel
     for (let i = state.particles.length - 1; i >= 0; i--) {
       const q = state.particles[i];
-      q.x += q.vx; q.y += q.vy; q.vy += 0.15; q.life--;
+      q.x += q.vx * delta;
+      q.y += q.vy * delta;
+      q.vy += 0.15 * delta;
+      q.life -= delta;
       rect(q.x, q.y, 2, 2, "#777");
       if (q.life <= 0) state.particles.splice(i, 1);
     }
 
-    // Hindernisse
     for (let i = state.obstacles.length - 1; i >= 0; i--) {
       const o = state.obstacles[i];
-      o.x -= state.speed;
+      o.x -= state.speed * delta;
       rect(o.x, o.y, o.w, o.h, "#d33");
 
       if (!o.hit && collide({ x: p.x, y: p.y, w: p.w, h: p.h }, o)) {
@@ -104,52 +102,44 @@
         gameOver();
         return;
       }
-      if (o.x + o.w < 0) {
-        state.obstacles.splice(i, 1);
-        state.score++;
+if (o.x + o.w < 0) {
+  state.obstacles.splice(i, 1);
+  state.score++;
 
-        // Kommentar während des Spiels
-        if (state.score > 0 && state.score % 8 === 0 && window.emotiOS && window.arcadeDialog) {
-          const emo = window.emotiOS.emotion || "Neutral";
-          const list = ["Freude", "Lustig", "Kokett", "Neutral"].includes(emo)
-            ? arcadeDialog.mid.positive
-            : arcadeDialog.mid.negative;
-          window.emotiOS.typeText(list[Math.floor(Math.random() * list.length)]);
-        }
+  // Positive Systemauswirkungen während des Spiels
+  if (window.emotiOS && window.emotiOS.care) {
+    const c = window.emotiOS.care;
+    c.interaktion   = Math.min(c.interaktion + 0.8, 100);
+    c.kommunikation = Math.min(c.kommunikation + 0.6, 100);
+    c.temperatur    = Math.min(c.temperatur + 0.15, 120); // leichter Hitzeschub
+    window.emotiOS.updateStatusWindow();
+  }
 
-        if (state.score % 5 === 0) state.themeHue = (state.themeHue + 40) % 360;
-      }
+  // Humorbonus bei anhaltendem Erfolg
+  if (window.emotiHumor && state.score % 3 === 0) {
+    window.emotiHumor.add(2);
+  }
+
+  // Farbübergang bei 5er-Schritten
+  if (state.score % 5 === 0) {
+    state.themeHue = (state.themeHue + 40) % 360;
+  }
+}
+
     }
 
-    // HUD
     text(`Score: ${state.score}`, 10, 15);
     text(`Best: ${state.best}`, cvs.width - 90, 15);
     raf = requestAnimationFrame(update);
   }
 
-  // Game Over
   function gameOver() {
     cancelAnimationFrame(raf);
     running = false;
-
     if (state.score > state.best) {
       state.best = state.score;
       localStorage.setItem("arcadeBest", String(state.best));
     }
-
-    // Dialog bei Game Over
-    if (window.emotiOS && window.arcadeDialog) {
-      const emo = window.emotiOS.emotion || "Neutral";
-      const list = ["Freude", "Lustig", "Kokett", "Neutral"].includes(emo)
-        ? arcadeDialog.gameover.positive
-        : arcadeDialog.gameover.negative;
-      window.emotiOS.typeText(list[Math.floor(Math.random() * list.length)]);
-    }
-
-    drawGameOver();
-  }
-
-  function drawGameOver() {
     ctx.fillStyle = "rgba(0,0,0,0.6)";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
     ctx.fillStyle = "#fff";
@@ -160,26 +150,15 @@
     ctx.fillText("Drücke R zum Neustart", cvs.width / 2 - 85, cvs.height / 2 + 30);
   }
 
-  // Start
   function start() {
     if (running) return;
     resetGame();
-
-    // Dialog beim Start
-    if (window.emotiOS && window.arcadeDialog) {
-      const emo = window.emotiOS.emotion || "Neutral";
-      const list = ["Freude", "Lustig", "Kokett", "Neutral"].includes(emo)
-        ? arcadeDialog.start.positive
-        : arcadeDialog.start.negative;
-      window.emotiOS.typeText(list[Math.floor(Math.random() * list.length)]);
-    }
-
     running = true;
-    update();
+    lastTime = performance.now();
+    update(lastTime);
     hud.textContent = "";
   }
 
-  // Steuerung
   function onKey(e) {
     if (win.classList.contains("hidden")) return;
     if (e.code === "Space") {
@@ -194,56 +173,18 @@
     } else if (e.code === "KeyP") {
       if (!running) return;
       paused = !paused;
-      if (!paused) update();
+      if (!paused) { lastTime = performance.now(); update(lastTime); }
       hud.textContent = paused ? "Pausiert (P zum Fortsetzen)" : "";
-    } else if (e.code === "KeyR") {
-      start();
-    }
+    } else if (e.code === "KeyR") start();
   }
-  window.addEventListener("keydown", onKey);
 
-  // Fenstersteuerung
-  btnClose.addEventListener("click", () => {
-    win.classList.add("hidden");
-    cancelAnimationFrame(raf);
-    running = false;
-  });
+  window.addEventListener("keydown", onKey);
+  btnClose.addEventListener("click", () => { win.classList.add("hidden"); cancelAnimationFrame(raf); running = false; });
   btnMin.addEventListener("click", () => win.classList.add("hidden"));
 
-  // Öffnen vom Desktop
   window.openArcade = function () {
     win.classList.remove("hidden");
     win.style.zIndex = 99999;
     if (!running) start();
   };
-})();
-
-// === Emotionale Effekte während des Spielens ===
-(function () {
-  const arcadeWindow = document.getElementById("arcadeWindow");
-  const closeBtn = arcadeWindow.querySelector(".close");
-
-  function applyArcadeEffects() {
-    if (!window.emotiOS) return;
-    if (arcadeWindow.classList.contains("hidden")) return;
-
-    const c = window.emotiOS.care;
-    if (window.emotiHumor) window.emotiHumor.add(5);
-    c.interaktion = Math.min(c.interaktion + 5, 100);
-    c.anerkennung = Math.max(c.anerkennung - 2, 0);
-    c.temperatur = Math.min(c.temperatur + 1, 120);
-
-    window.emotiOS.updateStatusWindow?.();
-    window.emotiOS.updateEmotion?.();
-    window.emotiOS.updateEmotionDisplay?.();
-  }
-
-  setInterval(applyArcadeEffects, 5000);
-
-  closeBtn.addEventListener("click", () => {
-    if (window.arcadeEffectInterval) {
-      clearInterval(window.arcadeEffectInterval);
-      window.arcadeEffectInterval = null;
-    }
-  });
 })();

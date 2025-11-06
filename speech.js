@@ -101,7 +101,7 @@ function createTerminalIfNeeded() {
     if (e.key === "Enter") {
       const text = input.value.trim();
       if (!text) return;
-      output.innerHTML += `C:\\EmotiOS> ${text}\n`;
+      output.innerHTML += `C:\\EmotiOS> ${text}<br>`;
       input.value = "";
       output.scrollTop = output.scrollHeight;
       speechHandler.analyze(text);

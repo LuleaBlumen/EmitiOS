@@ -129,10 +129,16 @@ Object.assign(EmotiOS.prototype, {
     return; // <-- GANZ WICHTIG
   }
 
-      case "update":
-        c.gesundheit = Math.min(c.gesundheit + 10, 100);
-        c.sicherheit = Math.min(c.sicherheit + 20, 100);
-        break;
+case "update": {
+  // Emoti benutzt die Update-Dialoge aus dialoge.js
+  const emotion = this.emotion || "Neutral";
+  const group = window.buttonTalk?.update || {};
+  const list = group[emotion] || group.Neutral || ["Update abgeschlossen. Systeme laufen stabil."];
+  const msg = list[Math.floor(Math.random() * list.length)];
+  this.typeText(msg.replace(/\$\{name\}/g, userName));
+  break;
+}
+
 
       case "praise":
         c.anerkennung = Math.min(c.anerkennung + 30, 100);
@@ -766,6 +772,7 @@ EmotiOS.prototype.startRestart = function () {
 EmotiOS.prototype.startShutdown = function () {
   this.isShutdown = true;
 
+  // Fenster schließen, aber Emoti bleibt sichtbar
   document.querySelectorAll(".window").forEach(el => { if (!el.classList.contains("emoti")) el.classList.add("hidden"); });
   document.querySelectorAll(".taskbar").forEach(el => el.classList.add("hidden"));
 
@@ -774,26 +781,53 @@ EmotiOS.prototype.startShutdown = function () {
   const bye = list[Math.floor(Math.random() * list.length)];
   this.typeText(bye.replace(/\$\{name\}/g, userName));
 
-  // Werte ein bisschen resetten
+  // Werte leicht regenerieren
   this.care.energie = Math.min(this.care.energie + 100, 100);
   this.care.temperatur = Math.max(this.care.temperatur - 100, 0);
 
-  // Sichern
+  // Daten speichern
   localStorage.setItem("emotiCare", JSON.stringify(this.care));
   localStorage.setItem("emotiProperShutdown", "true");
   localStorage.setItem("emotiLastEmotion", this.emotion);
 
-  // Bildschirm dunkel
-  setTimeout(() => {
-    document.querySelectorAll(".window, .taskbar, .desktop-icon").forEach(el => el.classList.add("hidden"));
-    document.body.style.background = "#000";
-    document.body.classList.add("blackout");
+  // Sanfter Ausblendeffekt
+  const overlay = document.createElement("div");
+  overlay.id = "shutdownOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "#000";
+  overlay.style.opacity = "0";
+  overlay.style.transition = "opacity 4s ease-in-out";
+  overlay.style.zIndex = "999999";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.justifyContent = "center";
+  overlay.style.alignItems = "center";
+  overlay.style.color = "#e0e0e0";
+  overlay.style.fontFamily = "'Consolas', monospace";
+  overlay.style.fontSize = "16px";
+  document.body.appendChild(overlay);
 
+  // Abschiedstext
+  setTimeout(() => {
+    overlay.innerHTML = `
+      <p>Herunterfahren wird vorbereitet...</p>
+      <p style="opacity:0.8;">Speichere Emotionen...</p>
+      <p style="opacity:0.6;">Fahre Systeme herunter...</p>
+      <p style="margin-top:20px;font-size:13px;opacity:0.5;">Bis später, ${userName}.</p>
+    `;
+    overlay.style.opacity = "1";
+  }, 4000);
+
+  // Komplett schwarz und Sperre setzen
+  setTimeout(() => {
+    overlay.innerHTML = "";
+    document.body.classList.add("blackout");
     localStorage.setItem("emotiLastShutdown", Date.now().toString());
-    // 15 Minuten Schlafsperre
     this.setSleepLock(15);
-  }, 5000);
+  }, 12000);
 };
+
 
 // === Bluescreen & Recovery ===
 EmotiOS.prototype.triggerBluescreen = function (reason = 'generic') {

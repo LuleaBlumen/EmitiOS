@@ -54,7 +54,7 @@
         <span>🧱 Firewall Defense – Abwehrmodus</span>
         <button id="fwCloseBtn" title="Schließen">×</button>
       </div>
-      <div class="window-body" style="width:520px;">
+      <div class="window-body" style="width:480px; box-sizing:border-box; overflow:hidden;">
         <div class="firewall-console" id="fwConsole"></div>
         <div class="firewall-controls">
           <div class="buttons">
@@ -71,12 +71,24 @@
           </div>
         </div>
         <div class="firewall-footer firewall-small">
-          Entscheide schnell, aber überlegt. Richtige Aktion: +5 Sicherheit. Fehler: -5 Sicherheit.
+          Entscheide schnell, aber überleg. Richtige Aktion geben mehr Sicherheit. Fehler schaden.
         </div>
       </div>
     `;
 
     document.body.appendChild(win);
+	
+	// Drag aktivieren wie bei anderen Fenstern
+	if (typeof attachDrag === "function") attachDrag(win);
+	if (typeof bringToFront === "function") bringToFront(win);
+setTimeout(() => {
+  const w = win.offsetWidth, h = win.offsetHeight;
+  win.style.position = "absolute";
+  win.style.left = `${(window.innerWidth - w) / 2}px`;
+  win.style.top  = `${(window.innerHeight - h) / 2 - 20}px`;
+}, 0);
+
+
 
     // Position mittig setzen
     setTimeout(() => {

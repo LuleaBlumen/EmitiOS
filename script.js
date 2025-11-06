@@ -1,4 +1,6 @@
 // === EmotiOS Hauptlogik ===
+window.emotiVersion = "1.0.2"; // deine aktuelle Version
+
 class EmotiOS {
   constructor() {
     // --- Grundwerte ---
