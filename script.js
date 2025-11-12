@@ -1,5 +1,5 @@
 // === EmotiOS Hauptlogik ===
-window.emotiVersion = "1.0.2"; // deine aktuelle Version
+window.emotiVersion = "1.0.1"; // deine aktuelle Version
 
 class EmotiOS {
   constructor() {

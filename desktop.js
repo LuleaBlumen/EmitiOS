@@ -110,6 +110,8 @@
     const openCPBtn       = document.getElementById("openControlPanel");
     const openTerminalBtn = document.getElementById("openTerminal");
     const closeBtn        = controlPanel?.querySelector(".close");
+	document.getElementById("openContact").addEventListener("click", openContactForm);
+
 
     if (controlPanel) controlPanel.classList.add("hidden");
 
@@ -200,10 +202,13 @@
       window.emotiOS?.interact?.("internet");
     });
 
-    // 1h) Arcade-Icon
-    document.getElementById("arcadeIcon")?.addEventListener("click", () => {
-      if (typeof openArcade === "function") openArcade();
-    });
+
+	// 1h) Arcade-Icon
+	document.getElementById("arcadeIcon")?.addEventListener("click", () => {
+	  window.emotiOS?.interact?.("arcade");
+	});
+
+
 
     // 1i) Energieoptionen (Neustart/Ruhe/Shutdown)
     const restartBtnMenu  = document.getElementById("restartBtnMenu");
@@ -254,6 +259,65 @@
 	// Begrüßung
 
 if (savedName) {
+	
+	// === Version prüfen und ggf. Update zuerst durchführen ===
+const currentVersion = window.emotiVersion;
+const lastVersion = localStorage.getItem("emotiLastVersion");
+
+if (!lastVersion || currentVersion !== lastVersion) {
+  localStorage.setItem("emotiLastVersion", currentVersion);
+
+  const overlay = document.createElement("div");
+  overlay.className = "defrag-overlay";
+  overlay.innerHTML = `
+    <div class="defrag-window" style="width:360px;">
+      <p id="autoUpdateText">Update wird installiert...</p>
+      <div class="progress-bar">
+        <div class="progress-fill" id="autoUpdateFill"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const lines = [
+    "> Lade neue Dialoge...",
+    "> Optimiere Humor-Subsystem...",
+    "> Kalibriere Persönlichkeit...",
+    "> Kompiliere Gefühle...",
+    "> Update abgeschlossen."
+  ];
+
+  const bar = overlay.querySelector("#autoUpdateFill");
+  const text = overlay.querySelector("#autoUpdateText");
+  let i = 0;
+
+  const interval = setInterval(() => {
+    if (i < lines.length) {
+      text.textContent = lines[i];
+      bar.style.width = `${(i / (lines.length - 1)) * 100}%`;
+      i++;
+    } else {
+      clearInterval(interval);
+      setTimeout(() => {
+        overlay.remove();
+        // Nach dem Update Begrüßung starten
+        startGreeting();
+      }, 800);
+    }
+  }, 1800);
+  return; // Rest überspringen bis Update fertig
+}
+function startGreeting() {
+  const emotion = window.emotiOS.emotion || "Neutral";
+  const gt = window.greetingTalk;
+  const list = (gt && (gt[emotion] || gt.Neutral)) || ["Willkommen zurück, ${name}."];
+  const msg = list[Math.floor(Math.random() * list.length)];
+  window.emotiOS.typeText(msg.replace(/\$\{name\}/g, savedName));
+
+  setTimeout(() => {
+    window.emotiOS.typeText("Update erfolgreich abgeschlossen. Ich hab jetzt neue Dialoge und bin… naja, etwas weiser.");
+  }, 6000);
+}
+
   overlay?.classList.add("hidden");
   setTimeout(() => {
     if (window.emotiOS) {
@@ -263,67 +327,7 @@ if (savedName) {
       const msg = list[Math.floor(Math.random() * list.length)];
       window.emotiOS.typeText(msg.replace(/\$\{name\}/g, savedName));
 
-      // === Nur Update anzeigen, wenn neue Version erkannt wurde UND schonmal gestartet wurde ===
-      const currentVersion = window.emotiVersion;
-      const lastVersion = localStorage.getItem("emotiLastVersion");
-
-      if (lastVersion && currentVersion !== lastVersion) {
-        localStorage.setItem("emotiLastVersion", currentVersion);
-
-        // --- Automatisches Systemupdate nach der Begrüßung ---
-        setTimeout(() => {
-          const overlay = document.createElement("div");
-          overlay.className = "defrag-overlay";
-          overlay.innerHTML = `
-            <div class="defrag-window" style="width:360px;">
-              <p id="autoUpdateText">Suche nach Updates...</p>
-              <div class="progress-bar">
-                <div class="progress-fill" id="autoUpdateFill"></div>
-              </div>
-            </div>`;
-          document.body.appendChild(overlay);
-
-          const lines = [
-            "> Lade neue Dialoge...",
-            "> Optimiere Emoti-Humor-Subsystem...",
-            "> Kalibriere Persönlichkeitsschichten...",
-            "> Kompiliere Gefühle...",
-            "> Update abgeschlossen. Ich bin jetzt... besser."
-          ];
-
-          const bar = document.getElementById("autoUpdateFill");
-          const text = document.getElementById("autoUpdateText");
-          let i = 0;
-
-          const interval = setInterval(() => {
-            if (i < lines.length) {
-              text.textContent = lines[i];
-              bar.style.width = `${(i / (lines.length - 1)) * 100}%`;
-              i++;
-            } else {
-              clearInterval(interval);
-              setTimeout(() => {
-                overlay.remove();
-const userName = localStorage.getItem("emotiUser") || "User";
-
-// Emoti nutzt jetzt seine eigene Update-Interaktion
-window.emotiOS.interact("update");
-
-// kleine Belohnung nach erfolgreichem Update
-const c = window.emotiOS.care;
-c.gesundheit = Math.min(c.gesundheit + 15, 100);
-c.sicherheit = Math.min(c.sicherheit + 25, 100);
-c.anerkennung = Math.min(c.anerkennung + 10, 100);
-window.emotiOS.updateStatusWindow();
-
-              }, 1000);
-            }
-          }, 2000);
-        }, 7000); // 7 Sekunden nach Begrüßung starten
-      } else {
-        // Beim ersten Start Version speichern, aber KEIN Update
-        localStorage.setItem("emotiLastVersion", currentVersion);
-      }
+      
       // === Ende Versionsprüfung ===
     }
   }, 1500);
@@ -472,14 +476,16 @@ formData.append("message", message);
       body: formData
     });
 
-    if (res.ok) {
-      status.textContent = "Nachricht gesendet ✅";
-      status.style.color = "#060";
-      window.emotiOS?.typeText?.("E-Mail erfolgreich verschickt.");
-      setTimeout(() => win.remove(), 2000);
-    } else {
-      throw new Error("Serverfehler");
-    }
+if (res.ok || res.status === 302 || res.status === 303) {
+  status.textContent = "Nachricht gesendet ✅";
+  status.style.color = "#060";
+  window.emotiOS?.typeText?.("E-Mail erfolgreich verschickt.");
+  setTimeout(() => win.remove(), 2000);
+} else {
+  status.textContent = `Hinweis: (${res.status}) – Nachricht wurde wahrscheinlich trotzdem gesendet.`;
+  status.style.color = "#aa0";
+}
+
   } catch (err) {
     status.textContent = "Fehler: Nachricht konnte nicht gesendet werden.";
     status.style.color = "#a00";

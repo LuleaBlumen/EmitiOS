@@ -1451,6 +1451,22 @@ const arcadeDialog = {
       "Ich seh schon den Bluescreen am Horizont."
     ]
   },
+    longplay: {
+    moderate: [
+      "Du bist schon 5 Minuten dabei... Ich glaub, du entwickelst ein echtes Gamer-Gen.",
+      "Das Spiel läuft heiß, und du anscheinend auch. Mach mal kurz Pause, nur so als Idee.",
+	  "Das Spiel scheint dir ja viel Spaß zu machen.",
+	  "Es ist schön zu sehen, wieviel Spaß du hast.",
+      "Respekt! 5 Minuten Konzentration ohne Absturz. Ich bin beeindruckt."
+    ],
+    extreme: [
+      "15 Minuten! Du bist offiziell im Byte-Runner-Koma. Trink was!",
+      "Ich glaub, du brauchst bald ein Achievement: 'Zocker des Monats'.",
+	  "Ich glaube das entwickelt sich gerade zur Sucht.",
+      "15 Minuten Spielzeit... ich wette, dein Lüfter fleht um Gnade."
+    ]
+  },
+
   gameover: {
     positive: [
       "Okay … war trotzdem cool!",
@@ -1468,7 +1484,8 @@ const arcadeDialog = {
     ]
   }
 };
-window.arcadeDialog = arcadeDialog;
+window.arcadeDialog = window.arcadeDialog || arcadeDialog;
+
 
 
 

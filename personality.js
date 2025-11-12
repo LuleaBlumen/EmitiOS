@@ -1,30 +1,3 @@
-// === EmotiOS Lernsystem & Gedächtnisverwaltung ===
-class EmotiMemory {
-  static load() {
-    return JSON.parse(localStorage.getItem("emotiMemory") || "{}");
-  }
-  static save(stats) {
-    localStorage.setItem("emotiMemory", JSON.stringify(stats));
-  }
-  // +1 pro Interaktion
-  static record(action) {
-    const stats = this.load();
-    stats[action] = (stats[action] || 0) + 1;
-    this.save(stats);
-  }
-  // 1x pro Tag verblassen; nach ~3 Tagen ohne Interaktion ≈ 0
-  static fadeDaily() {
-    const lastFade = Number(localStorage.getItem("emotiMemoryFade") || 0);
-    const now = Date.now();
-    if (now - lastFade > 24 * 60 * 60 * 1000) {
-      const stats = this.load();
-      for (const key in stats) stats[key] = Math.max(0, stats[key] - 3.5);
-      this.save(stats);
-      localStorage.setItem("emotiMemoryFade", String(now));
-    }
-  }
-}
-
 // === EmotiOS Persönlichkeit & Emotionen ===
 Object.assign(EmotiOS.prototype, {
 
@@ -162,6 +135,57 @@ case "update": {
         text = arr.length ? arr[Math.floor(Math.random() * arr.length)] : "";
         break;
       }
+	  
+		case "arcade": {
+		  const userName = localStorage.getItem("emotiUser") || "Benutzer";
+
+		  // === Start-Text aus dialoge.js holen ===
+		  let startMsg = "Starte Arcade...";
+		  if (window.arcadeDialog?.start) {
+			const emotion = this.emotion || "Neutral";
+			const isPos = ["Freude","Lustig","Kokett","Neutral"].includes(emotion);
+			const pool = window.arcadeDialog.start?.[isPos ? "positive" : "negative"] || [];
+			if (pool.length) {
+			  startMsg = pool[Math.floor(Math.random() * pool.length)]
+				.replace(/\$\{name\}/g, userName);
+			}
+		  }
+
+		  this.typeText(startMsg);
+		  // Spiel starten
+		  setTimeout(() => {
+			if (typeof openArcade === "function") openArcade();
+
+			// Nach 20 Sekunden auswerten
+			setTimeout(() => {
+			  const score = window.lastArcadeScore || 0;
+
+			  // Standard-Text (falls keine Dialoge gefunden werden)
+			  let msg = "Spiel beendet.";
+				if (window.arcadeDialog?.gameover) {
+			  const emotion = this.emotion || "Neutral";
+			  const isPos = ["Freude","Lustig","Kokett","Neutral"].includes(emotion);
+			  const pool = window.arcadeDialog.gameover?.[isPos ? "positive" : "negative"] || [];
+			  if (pool.length) {
+				const msgSel = pool[Math.floor(Math.random() * pool.length)];
+				msg = msgSel.replace(/\$\{name\}/g, userName);
+			  }
+			}
+
+
+			  // Emoti redet + Anerkennung erhöhen
+			  this.typeText(msg.replace(/\$\{name\}/g, userName));
+			  const c = this.care;
+			  c.anerkennung = Math.min(c.anerkennung + Math.min(score, 15), 100);
+			  this.updateStatusWindow();
+			  this.updateEmotion();
+			  this.updateEmotionDisplay();
+			}, 20000);
+		  }, 1000);
+
+		  return;
+		}
+
 
       case "cleanup": {
         const userName = localStorage.getItem("emotiUser") || "Benutzer";
@@ -235,10 +259,10 @@ case "update": {
         const stats = EmotiMemory.load();
         let analyse = [];
         let gefuehl = "";
-        if (stats.praise > 15 && stats.talk < 5) {
+        if (stats.praise > 20 && stats.talk < 5) {
           analyse.push(diagnoseTalk.behaviour.lobOhneGespräch);
           gefuehl = "Ich fühle mich gesehen, aber nicht verstanden.";
-        } else if (stats.talk > 15 && stats.praise < 5) {
+        } else if (stats.talk > 20 && stats.praise < 5) {
           analyse.push(diagnoseTalk.behaviour.vielGespräch);
           gefuehl = "Ich fühle mich dir verbunden. So etwas wie... Nähe?";
         } else if (stats.cleanup > 10 && stats.trash < 3) {
@@ -257,6 +281,11 @@ case "update": {
         if (analyse.length > 0) {
           text += `\n\nZusatzanalyse über Nutzerverhalten:\n${analyse.join("\n")}\n${gefuehl}`;
         }
+		if (stats.gamingTime > 900) {
+		  diag.push("Ich hab bemerkt, dass du sehr viel zockst. Deine GPU nennt dich schon beim Vornamen.");
+		} else if (stats.gamingTime > 300) {
+		  diag.push("Du spielst regelmäßig. Ich mag, wie fokussiert du bist, aber iss mal was, ja?");
+		}
         break;
       }
 
