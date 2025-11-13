@@ -102,15 +102,9 @@ Object.assign(EmotiOS.prototype, {
     return; // <-- GANZ WICHTIG
   }
 
-case "update": {
-  // Emoti benutzt die Update-Dialoge aus dialoge.js
-  const emotion = this.emotion || "Neutral";
-  const group = window.buttonTalk?.update || {};
-  const list = group[emotion] || group.Neutral || ["Update abgeschlossen. Systeme laufen stabil."];
-  const msg = list[Math.floor(Math.random() * list.length)];
-  this.typeText(msg.replace(/\$\{name\}/g, userName));
-  break;
-}
+
+
+
 
 
       case "praise":
@@ -293,6 +287,84 @@ case "update": {
         c.kommunikation = Math.max(c.kommunikation - 15, 0);
         c.ordnung       = Math.max(c.ordnung +  5, 0);
         break;
+		
+case "update": {
+  const userName = localStorage.getItem("emotiUser") || "Benutzer";
+
+  // === Overlay anzeigen ===
+  const overlay = document.createElement("div");
+  overlay.className = "defrag-overlay";
+  overlay.innerHTML = `
+    <div class="defrag-window" style="width:360px;">
+      <p id="updateText">Suche nach Updates...</p>
+      <div class="progress-bar">
+        <div class="progress-fill" id="updateProgress"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const progress = overlay.querySelector("#updateProgress");
+  const textEl = overlay.querySelector("#updateText");
+  const messages = [
+    "Suche neue Version...",
+    "Vergleiche Systemdateien...",
+    "Prüfe Repository...",
+    "Validiere Versionsnummer..."
+  ];
+
+  let step = 0;
+  const interval = setInterval(() => {
+    if (step < messages.length) {
+      textEl.textContent = messages[step];
+      // Fortschritt sichtbar machen (0 → 100 %)
+      progress.style.width = `${((step + 1) / messages.length) * 100}%`;
+      step++;
+    } else {
+      clearInterval(interval);
+
+      // === Version auf dem Server prüfen ===
+      fetch("https://www.emotios.de/script.js?v=" + Date.now())
+        .then(res => res.ok ? res.text() : Promise.reject(res.status))
+        .then(text => {
+          const match = text.match(/window\.emotiVersion\s*=\s*["']([\d.]+)["']/);
+          const latest = match ? match[1] : null;
+          const current = window.emotiVersion || "0";
+
+          overlay.remove();
+
+          if (!latest) {
+            this.typeText("Updateprüfung fehlgeschlagen. Konnte Versionsnummer nicht lesen.");
+            return;
+          }
+
+          if (latest !== localStorage.getItem("emotiLastVersion")) {
+            // Neue Version auf dem Server gefunden
+            localStorage.setItem("emotiLastVersion", latest);
+            localStorage.setItem("emotiJustUpdated", "1");
+
+            this.typeText(`Update gefunden (v${latest}). System wird neu gestartet...`);
+            setTimeout(() => {
+              const url = window.location.href.split("?")[0] + "?v=" + Date.now();
+              window.location.replace(url); // Hard-Reload -> Browser holt alles frisch
+            }, 2500);
+          } else {
+            // Schon auf der aktuellen Version
+            localStorage.setItem("emotiLastVersion", current);
+            this.typeText(`Keine Updates verfügbar. Ich bin bereits auf v${current}, ${userName}.`);
+          }
+        })
+        .catch(() => {
+          overlay.remove();
+          this.typeText("Updateprüfung fehlgeschlagen. Keine Verbindung zum Server.");
+        });
+    }
+  }, 600);
+
+  break;
+}
+
+
+
 
       case "backup": {
         const now = Date.now();

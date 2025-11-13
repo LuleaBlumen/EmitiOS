@@ -1,5 +1,18 @@
 // === EmotiOS Hauptlogik ===
-window.emotiVersion = "1.0.2"; // deine aktuelle Version
+window.emotiVersion = "1.1.1"; // deine aktuelle Version
+
+// === Versionsstatus einmalig mit LocalStorage synchronisieren ===
+try {
+  const current = window.emotiVersion || "0";
+  const last = localStorage.getItem("emotiLastVersion");
+
+  if (last !== current) {
+    // Neue Version oder erster Start
+    localStorage.setItem("emotiLastVersion", current);
+  }
+} catch (e) {
+  console.warn("Konnte Versionsinfo nicht im LocalStorage speichern:", e);
+}
 
 class EmotiOS {
   constructor() {
@@ -132,6 +145,48 @@ window.addEventListener("load", () => {
   console.log("EmotiOS wird gestartet...");
   localStorage.setItem("emotiProperShutdown", "false");
   window.emotiOS = new EmotiOS();
+  // === Auto-Update beim Start ===
+(function autoUpdateOnStart() {
+  const current = window.emotiVersion || "0";
+
+  fetch("https://www.emotios.de/script.js?v=" + Date.now())
+    .then(res => res.ok ? res.text() : Promise.reject(res.status))
+    .then(text => {
+      const match = text.match(/window\.emotiVersion\s*=\s*["']([\d.]+)["']/);
+      const latest = match ? match[1] : null;
+
+      if (!latest) return; // Falls offline → normal starten
+      if (latest === current) return; // Kein Update nötig
+
+      // Update nötig
+      localStorage.setItem("emotiLastVersion", latest);
+      localStorage.setItem("emotiJustUpdated", "1");
+
+      // Sofort harter Reload
+      const url = location.href.split("?")[0] + "?v=" + Date.now();
+      location.replace(url);
+    })
+    .catch(() => {});
+})();
+
+  // === Nach Neustart: Update-Hinweis anzeigen ===
+try {
+  if (localStorage.getItem("emotiJustUpdated") === "1") {
+    localStorage.removeItem("emotiJustUpdated");
+    const name = localStorage.getItem("emotiUser") || "Benutzer";
+
+    setTimeout(() => {
+      if (window.emotiOS && window.emotiVersion) {
+        window.emotiOS.typeText(
+          `Update auf Version v${window.emotiVersion} abgeschlossen, ${name}. Neustart erfolgreich.`
+        );
+      }
+    }, 3000);
+  }
+} catch (e) {
+  console.warn("Konnte Update-Hinweis nicht anzeigen:", e);
+}
+
   // --- Prüfen auf unsauberen Shutdown (mit kurzer Startpause) ---
 setTimeout(() => {
   const proper = localStorage.getItem("emotiProperShutdown");
@@ -168,7 +223,6 @@ window.addEventListener("beforeunload", () => {
     localStorage.setItem("emotiProperShutdown", "false");
   }
 });
-
 
 
 
